@@ -18,16 +18,19 @@ public class QuadTreeDemo : MonoBehaviour
     BallStruct[] balls;
     int cntFps;
     int cntFrames;
-    GameObject parentBalls;
-    GameObject parentQuads;
     QTCircleStruct rangeBall;
     Vector2 centerQuadTree;
     Vector2 scaleQuadTree;
-    QTQuadClass quadTree;
     GlobalClass global;
+    GUIStyle guiStyle;
 
-    void Start()
+	private void Awake()
+	{
+        Application.targetFrameRate = 120;
+	}
+	void Start()
     {
+        guiStyle = new GUIStyle();
         InitGlobal();
         InitFloor();
         InitRangeBall();
@@ -50,6 +53,7 @@ public class QuadTreeDemo : MonoBehaviour
 
     void LoadGlobal() {
         global.ynShowQuads = ynShowQuads;
+        global.ynUseQuadTree = ynUseQuadTree;
     }
 
     void UnloadGlobal() {
@@ -78,7 +82,7 @@ public class QuadTreeDemo : MonoBehaviour
     }
 
     void InitBalls() {
-        parentBalls = new GameObject("parentBalls");
+        global.parentBalls = new GameObject("parentBalls");
         balls = new BallStruct[numBalls];
         for (int b = 0; b < numBalls; b++) {
             Vector2 pos = new Vector2(Random.Range(0, maxX), Random.Range(0, maxY));
@@ -87,37 +91,38 @@ public class QuadTreeDemo : MonoBehaviour
             float ss1 = Random.Range(-s1, s2);
             float ss2 = Random.Range(-s1, s2);
             Vector2 velocity = new Vector2(ss1, ss2);
-            balls[b] = new BallStruct(pos, velocity, rad);
+            balls[b] = new BallStruct(pos, velocity, rad, global);
         }
     }
 
     void UpdateBalls() {
+        ResetGlobal();
         if (ynUseQuadTree == true) {
             InitQuadTree();
         } else {
             global.ynShowQuads = false;
-            if (parentQuads != null) DestroyImmediate(parentQuads);
+            RemoveQuads();
         }
-        global.cntSearch = 0;
         for (int b = 0; b < numBalls; b++)
         {
             balls[b].Move();
             balls[b].CheckBorders(maxX, maxY);
             rangeBall.center = balls[b].pos;
-            int bNearest = balls[b].FindNearest(balls, rangeBall, quadTree, ynUseQuadTree, global);
-            //bNearest = -1;
+            int bNearest = balls[b].FindNearest(balls, rangeBall, global);
             if (bNearest > -1) {
                 balls[b].Avoid(balls[bNearest].pos);
             }
         }
     }
+
     void InitQuadTree()
     {
-        global.cntQuads = 0;
         if (ynShowQuads == true)
         {
-            if (parentQuads != null) DestroyImmediate(parentQuads);
-            parentQuads = new GameObject("parentQuads");
+            RemoveQuads();
+            global.parentQuads = new GameObject("parentQuads");
+        } else {
+            RemoveQuads();
         }
         float x = maxX / 2;
         float y = maxY / 2;
@@ -125,12 +130,20 @@ public class QuadTreeDemo : MonoBehaviour
         float sy = maxY;
         centerQuadTree = new Vector2(x, y);
         scaleQuadTree = new Vector2(sx, sy);
-        quadTree = new QTQuadClass(centerQuadTree, scaleQuadTree, parentQuads, global);
-        quadTree.LoadBalls(balls);
-        if (ynShowQuads == false) {
-            if (parentQuads != null) DestroyImmediate(parentQuads);
-        }
+        global.quadTree = new QTQuadClass(centerQuadTree, scaleQuadTree, global);
+        global.quadTree.LoadBalls(balls);
     }
+
+    void ResetGlobal() {
+        global.cntQuads = 0;
+        global.cntSearch = 0;
+        global.cntResults = 0;
+    }
+
+    void RemoveQuads() {
+        if (global.parentQuads != null) DestroyImmediate(global.parentQuads);
+    }
+
     void MakeMaterialTransparent(Material material)
     {
         material.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.One);
@@ -141,6 +154,12 @@ public class QuadTreeDemo : MonoBehaviour
         material.EnableKeyword("_ALPHAPREMULTIPLY_ON");
         material.renderQueue = 3000;
     }
+
+	private void OnGUI()
+	{
+        guiStyle.fontSize = 40;
+        GUI.Label(new Rect(10, 10, 100, 20), "fps:" + fps, guiStyle);
+	}
 }
 
 public class QTQuadClass
@@ -153,13 +172,11 @@ public class QTQuadClass
     public bool isDivided;
     public int lastData;
     public GameObject go;
-    public GameObject parentQuads;
     public GlobalClass global;
-    public QTQuadClass(Vector2 center, Vector2 scale, GameObject parentQuads0, GlobalClass global0)
+    public QTQuadClass(Vector2 center, Vector2 scale, GlobalClass global0)
     {
         global = global0;
         global.cntQuads++;
-        parentQuads = parentQuads0;
         rectQuad = new QTRectStruct(center, scale);
         data = new QTDataStruct[capacity];
         lastData = 0;
@@ -167,8 +184,8 @@ public class QTQuadClass
         if (global.ynShowQuads == true)
         {
             go = new GameObject("quad");
-            go.transform.parent = parentQuads.transform;
-            float s = .01f;
+            go.transform.parent = global.parentQuads.transform;
+            float s = .025f;
             float w = scale.x;
             float h = scale.y;
             //
@@ -200,11 +217,11 @@ public class QTQuadClass
     }
     public void SelectRange(QTCircleStruct rangeCircle, List<QTDataStruct> results)
     {
-        global.cntSearch++;
         if (rectQuad.IntersectsCircle(rangeCircle) == false)
         {
             return;
         }
+        global.cntSearch++;
         for (int d = 0; d < lastData; d++)
         {
             if (rangeCircle.Contains(data[d].pos) == true)
@@ -257,7 +274,7 @@ public class QTQuadClass
                         float y = rectQuad.center.y;
                         Vector2 center = new Vector2(x + ix * w / 4, y + iy * h / 4);
                         Vector2 scale = new Vector2(w / 2, h / 2);
-                        quads[q] = new QTQuadClass(center, scale, parentQuads, global);
+                        quads[q] = new QTQuadClass(center, scale, global);
                         q++;
                     }
                 }
@@ -337,19 +354,19 @@ public struct QTRectStruct
         return true;
     }
     public bool IntersectsCircle(QTCircleStruct circle) {
-        if (center.x + scale.x / 2 < circle.center.x - circle.rad / 2)
+        if (center.x + scale.x / 2 < circle.center.x - circle.rad)
         {
             return false;
         }
-        if (center.x - scale.x / 2 > circle.center.x + circle.rad / 2)
+        if (center.x - scale.x / 2 > circle.center.x + circle.rad)
         {
             return false;
         }
-        if (center.y + scale.y / 2 < circle.center.y - circle.rad / 2)
+        if (center.y + scale.y / 2 < circle.center.y - circle.rad)
         {
             return false;
         }
-        if (center.y - scale.y / 2 > circle.center.y + circle.rad / 2)
+        if (center.y - scale.y / 2 > circle.center.y + circle.rad)
         {
             return false;
         }
@@ -382,11 +399,12 @@ public struct BallStruct {
     public Vector2 pos;
     public Vector2 velocity;
     public GameObject go;
-    public BallStruct(Vector2 pos0, Vector2 velocity0, float rad0) {
+    public BallStruct(Vector2 pos0, Vector2 velocity0, float rad0, GlobalClass global) {
         rad = rad0;
         pos = pos0;
         velocity = velocity0;
         go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        go.transform.parent = global.parentBalls.transform;
         go.name = "ball";
         go.transform.position = new Vector3(pos.x, 0, pos.y);
         go.transform.localScale = new Vector3(rad * 2, rad * 2, rad * 2);
@@ -416,11 +434,11 @@ public struct BallStruct {
         }
         return false;
     }
-    public int FindNearest(BallStruct[] balls, QTCircleStruct range, QTQuadClass quadTree, bool ynUseQuadTree, GlobalClass global) { 
+    public int FindNearest(BallStruct[] balls, QTCircleStruct range, GlobalClass global) { 
         int result = -1;
-        if (ynUseQuadTree == true) {
+        if (global.ynUseQuadTree == true) {
             List<QTDataStruct> results = new List<QTDataStruct>();
-            quadTree.SelectRange(range, results);
+            global.quadTree.SelectRange(range, results);
             if (results.Count > 0) {
                 for (int r = 0; r < results.Count; r++) {
                     if (go != balls[results[r].dataIndex].go) {
@@ -477,4 +495,8 @@ public class GlobalClass {
     public int cntResults;
     public int cntSearch;
     public bool ynShowQuads;
+    public GameObject parentQuads;
+    public GameObject parentBalls;
+    public bool ynUseQuadTree;
+    public QTQuadClass quadTree;
 }
