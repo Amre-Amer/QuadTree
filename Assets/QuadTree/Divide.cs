@@ -50,7 +50,7 @@ public class Divide : MonoBehaviour {
             rectQuad = new Rect(rect);
             pointData = new PointDataStruct[4];
             lastPointData = 0;
-            //Show(rectQuad);
+            Show(rectQuad);
         }
 
         public void GetRangeData(Rect rectRange, List<PointDataStruct>results, int cnt) {
@@ -109,7 +109,7 @@ public class Divide : MonoBehaviour {
                 pointData[lastPointData].z = z;
                 pointData[lastPointData].index = index;
                 result = true;
-//                quadGo.name += " |";
+                quadGo.name += " |";
                 //
                 lastPointData++;
             } else {
@@ -233,7 +233,6 @@ public class Divide : MonoBehaviour {
         float distNear = 2;
         Vector3 pos = points[p].go.transform.position;
         if (ynUseQT == true) {
-            //distNear *= 2;
             rangeGo.transform.position = pos;
             rangeGo.transform.localScale = new Vector3(distNear, 0, distNear);
             //
@@ -263,7 +262,7 @@ public class Divide : MonoBehaviour {
 
     void UpdateQT()
     {
-        if (goGrandparent != null) Destroy(goGrandparent);
+        if (goGrandparent != null) DestroyImmediate(goGrandparent);
         goGrandparent = new GameObject("goGrandparent");
         qt = new QuadClass(rectQT, goGrandparent);
         InsertPoints2QT(qt);

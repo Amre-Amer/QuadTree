@@ -63,11 +63,9 @@ public class QuadClass {
         if (RectIntersectRect(range, rect) == false) {
             return;
         }
-//        Debug.Log("get:" + rect + "\n");
         for (int p = 0; p < lastPoint; p++) {
             if (range.Contains(quadPoints[p].pos) == true)
             {
-//                Debug.Log("get add:" + rect + " contains:" + quadPoints[p].pos + "\n");
                 result.Add(quadPoints[p]);
             }
         }
@@ -104,7 +102,6 @@ public class QuadClass {
 
     public bool InsertPoint(Vector2 point, int dataIndex)
     {
-//        Debug.Log(point + " " + rect + "\n");
         bool result = false;
         if (rect.Contains(point) == false)
         {
@@ -115,7 +112,6 @@ public class QuadClass {
             quadPoints[lastPoint].dataIndex = dataIndex;
             lastPoint++;
             result = true;
-//            Debug.Log("add:" + point + " in " + rect + "\n");
             if (lastPoint == 1) goRect.GetComponent<Renderer>().material.color = Color.red;
             if (lastPoint == 2) goRect.GetComponent<Renderer>().material.color = Color.green;
             if (lastPoint == 3) goRect.GetComponent<Renderer>().material.color = Color.blue;
@@ -129,19 +125,15 @@ public class QuadClass {
             ynDivided = true;
             float w = rect.size.x / 2;
             float h = rect.size.y / 2;
-            //rect0 = new Rect(rect.center + new Vector2(-w, 0), rect.size / 2);
             rect0 = new Rect(rect.center.x - w, rect.center.y - h, w, h);
             Debug.Log(rect + " divide 1:" + rect0 + "\n");
             q1 = new QuadClass(rect0);
-            //rect0 = new Rect(rect.center + new Vector2(0, 0), rect.size / 2);
             rect0 = new Rect(rect.center.x, rect.center.y - h, w, h);
             Debug.Log(rect + " divide 2:" + rect0 + "\n");
             q2 = new QuadClass(rect0);
-            //rect0 = new Rect(rect.center + new Vector2(-w, -h), rect.size / 2);
             rect0 = new Rect(rect.center.x - w, rect.center.y, w, h);
             Debug.Log(rect + " divide 3:" + rect0 + "\n");
             q3 = new QuadClass(rect0);
-            //rect0 = new Rect(rect.center + new Vector2(0, -h), rect.size / 2);
             rect0 = new Rect(rect.center.x, rect.center.y, w, h);
             Debug.Log(rect + " divide 4:" + rect0 + "\n");
             q4 = new QuadClass(rect0);
@@ -159,7 +151,6 @@ public class QuadClass {
             {
                 yn = q4.InsertPoint(point, dataIndex);
             }
-            //Debug.Log("add div:" + point + " " + rect + " div: " + rect0 + "\n");
             result = yn;
         }
         return result;
