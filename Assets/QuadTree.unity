@@ -330,17 +330,24 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 568041f46299e4b8da30d598e6508a6b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  capacity: 1
   numBalls: 1000
-  rad: 1
+  rad: 0.25
   maxX: 100
   maxY: 100
   speed: 0.25
   cntSearch: 0
   cntQuads: 0
   cntResults: 0
+  deepestLevel: 0
+  deepestSize: 0
   fps: 0
+  elapsedTime: 0
   ynShowQuads: 0
   ynUseQuadTree: 1
+  ynFollowTarget: 0
+  ynAvoid: 1
+  ynATC: 0
 --- !u!4 &1379930697
 Transform:
   m_ObjectHideFlags: 0

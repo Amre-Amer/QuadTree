@@ -7,8 +7,10 @@ public struct BallStruct
     public Vector2 pos;
     public Vector2 velocity;
     public GameObject go;
-    public BallStruct(Vector2 pos0, Vector2 velocity0, float rad0, GlobalClass global)
+    public GlobalClass global;
+    public BallStruct(Vector2 pos0, Vector2 velocity0, float rad0, GlobalClass global0)
     {
+        global = global0;
         rad = rad0;
         pos = pos0;
         velocity = velocity0;
@@ -17,15 +19,26 @@ public struct BallStruct
         go.name = "ball";
         go.transform.position = new Vector3(pos.x, 0, pos.y);
         go.transform.localScale = new Vector3(rad * 2, rad * 2, rad * 2);
+        SetColor(Random.ColorHSV());
     }
     public void Move()
     {
-        go.transform.position += new Vector3(velocity.x, 0, velocity.y);
-        UpdatePos();
+        Vector3 pos0 = Vector3.zero;
+        if (global.ynFollowTarget == true) {
+            go.transform.LookAt(global.target);
+            pos0 = go.transform.position + go.transform.forward * velocity.magnitude;
+        } else {
+            pos0 = go.transform.position += new Vector3(velocity.x, 0, velocity.y);
+        }
+        MoveTo(pos0);
     }
-    public void UpdatePos()
-    {
-        pos = new Vector2(go.transform.position.x, go.transform.position.z);
+    public void MoveTo(Vector3 pos0) {
+        float smooth = .1f;
+        go.transform.position = (1 - smooth) * go.transform.position + smooth * pos0;
+        UpdatePos(pos0);
+    }
+    void UpdatePos(Vector3 pos0) {
+        pos = new Vector2(pos0.x, pos0.z);
     }
     public void Avoid(Vector2 posAvoid)
     {
